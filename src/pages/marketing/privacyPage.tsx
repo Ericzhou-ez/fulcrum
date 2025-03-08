@@ -24,20 +24,14 @@ const PRIVACY_SECTIONS = [
 ];
 
 interface PrivacyPolicyPageProps {
-   signedIn: boolean;
    toggleModal: () => void;
-   user: any;
-   handleSignOut: () => void;
    isModalOpen: boolean;
    theme: any;
    handleToggleTheme: () => void;
 }
 
 function PrivacyPolicyPage({
-   signedIn,
    toggleModal,
-   user,
-   handleSignOut,
    isModalOpen,
    theme,
    handleToggleTheme,
@@ -54,10 +48,7 @@ function PrivacyPolicyPage({
    return (
       <React.Fragment>
          <Nav
-            signedIn={signedIn}
             toggleModal={toggleModal}
-            user={user}
-            handleSignOut={handleSignOut}
             isModalOpen={isModalOpen}
             home={true}
             navOpen={false}

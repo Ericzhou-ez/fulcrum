@@ -37,9 +37,6 @@ interface Product {
 }
 
 interface SearchPageProps {
-   signedIn: boolean;
-   user: any;
-   handleSignOut: () => void;
    isModalOpen: boolean;
    theme: any;
    handleToggleTheme: () => void;
@@ -52,9 +49,6 @@ interface SearchPageProps {
 }
 
 const SearchPage: React.FC<SearchPageProps> = ({
-   signedIn,
-   user,
-   handleSignOut,
    isModalOpen,
    theme,
    handleToggleTheme,
@@ -150,9 +144,6 @@ const SearchPage: React.FC<SearchPageProps> = ({
             home={false}
             navOpen={navOpen}
             setNavOpen={setNavOpen}
-            signedIn={signedIn}
-            user={user}
-            handleSignOut={handleSignOut}
             isModalOpen={isModalOpen}
             toggleModal={toggleModal}
             overlay={overlay}

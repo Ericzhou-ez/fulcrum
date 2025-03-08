@@ -71,7 +71,7 @@
 
 .cta-login {
    background-color: var(--background-secondary-color) !important;
-   padding: 11px 25px;
+   padding: 9px 25px;
    color: var(--text-secondary-color) !important;
    font-weight: 500;
    font-size: 1rem;
@@ -106,7 +106,7 @@
 .animated-border {
    position: relative;
    display: inline-block;
-   padding: 2.5px;
+   padding: 2px;
    font-weight: 600;
    color: #fff;
    background: var(--text-primary-color);
@@ -241,7 +241,7 @@
 
    .cta-login {
       font-size: 0.8rem;
-      padding: 8px 20px !important;
+      padding: 7px 20px !important;
    }
    .cta-bottom-btn {
       font-size: 0.7rem !important;

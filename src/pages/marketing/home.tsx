@@ -11,15 +11,11 @@ import FooterName from "../../assets/images/footerName.svg";
 interface HomeProps {
    theme: any;
    handleToggleTheme: () => void;
-   signedIn: boolean;
-   user: any;
 }
 
 const Home: React.FC<HomeProps> = ({
    theme,
    handleToggleTheme,
-   signedIn,
-   user,
 }) => {
    const [footerHeight, setFooterHeight] = useState(0);
    const imgRef = useRef<HTMLImageElement | null>(null);
@@ -75,10 +71,7 @@ const Home: React.FC<HomeProps> = ({
             <div className="home">
                <div className="star-container"></div>
                <Nav
-                  signedIn={signedIn}
-                  user={user}
                   home={true}
-                  handleSignOut={() => {}}
                   isModalOpen={false}
                   toggleModal={() => {}}
                   navOpen={false}

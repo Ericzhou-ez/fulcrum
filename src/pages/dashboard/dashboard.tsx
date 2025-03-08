@@ -15,14 +15,12 @@ import "../../styles/dashboard.css";
 import { Auth } from "firebase/auth";
 import DashboardOverview from "../../components/dashboard/dashboardOverview";
 import SideNav from "../../components/dashboard/dashboardNav";
+import Loading from "../../components/core/loading";
 
 interface DashboardProps {
-   user: { name: string; photo: string };
-   signedIn: boolean;
    isModalOpen: boolean;
    theme: any;
    handleToggleTheme: () => void;
-   handleSignOut: () => Promise<void>;
    toggleModal: () => void;
    navOpen: boolean;
    setNavOpen: any;
@@ -41,12 +39,9 @@ const mainContentStyles = (navOpen: boolean) => ({
 });
 
 const Dashboard: React.FC<DashboardProps> = ({
-   user,
-   signedIn,
    isModalOpen,
    theme,
    handleToggleTheme,
-   handleSignOut,
    toggleModal,
    navOpen,
    setNavOpen,
@@ -67,11 +62,8 @@ const Dashboard: React.FC<DashboardProps> = ({
          <SideNav navOpen={navOpen} setNavOpen={setNavOpen} />
 
          <Nav
-            user={user}
             home={false}
             navOpen={navOpen}
-            signedIn={signedIn}
-            handleSignOut={handleSignOut}
             isModalOpen={isModalOpen}
             toggleModal={toggleModal}
             setNavOpen={setNavOpen}

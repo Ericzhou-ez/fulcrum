@@ -1,25 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
-import { auth, googleAuth, actionCodeSettings } from "../configs/firebase";
-import {
-   createUserWithEmailAndPassword,
-   signInWithEmailAndPassword,
-   signInWithPopup,
-   sendSignInLinkToEmail,
-   isSignInWithEmailLink,
-   signInWithEmailLink,
-} from "firebase/auth";
+import React, { useState, useRef, FormEvent } from "react";
 import "../styles/authentication.css";
-import Footer from "../components/core/footer";
 import Nav from "../components/core/nav";
-import { Typography } from "@mui/material";
+import Footer from "../components/core/footer";
 import FooterName from "../assets/images/footerName.svg";
+import { Typography } from "@mui/material";
+import { useAuth } from "../contexts/user-context";
+import { useNavigate } from "react-router-dom";
+import { uploadProfilePic } from "../utils/uploadProfilePicture";
+import Loading from "../components/core/loading";
 
 interface SignInPageProps {
    theme: any;
    handleToggleTheme: () => void;
-   user: any;
-   signedIn: boolean;
-   handleSignOut: () => void;
    isModalOpen: boolean;
    toggleModal: () => void;
 }
@@ -27,102 +19,81 @@ interface SignInPageProps {
 const SignInPage: React.FC<SignInPageProps> = ({
    theme,
    handleToggleTheme,
-   user,
-   signedIn,
-   handleSignOut,
    isModalOpen,
    toggleModal,
 }) => {
+   const { googleSignIn, emailSignIn, emailSignUp, completeProfile } =
+      useAuth();
+   const navigate = useNavigate();
    const [email, setEmail] = useState("");
    const [password, setPassword] = useState("");
    const [isUserSigningUp, setIsUserSigningUp] = useState(false);
    const [errorMessage, setErrorMessage] = useState("");
    const [successMessage, setSuccessMessage] = useState("");
-   const [isSendingEmail, setIsSendingEmail] = useState(false);
+   const [isProcessing, setIsProcessing] = useState(false);
+   const [firstName, setFirstName] = useState("");
+   const [lastName, setLastName] = useState("");
+   const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
+   const [profilePicPreview, setProfilePicPreview] = useState("");
    const [footerHeight, setFooterHeight] = useState(0);
    const imgRef = useRef<HTMLImageElement | null>(null);
    const isDark = theme.palette.mode === "dark";
+   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+         const file = e.target.files[0];
+         setProfilePicFile(file);
+         setProfilePicPreview(URL.createObjectURL(file));
+      }
+   };
 
-   useEffect(() => {
-      if (isSignInWithEmailLink(auth, window.location.href)) {
-         const storedEmail = window.localStorage.getItem("emailForSignUp");
-
-         if (storedEmail) {
-            completeSignUp(storedEmail);
+   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      setErrorMessage("");
+      setSuccessMessage("");
+      setIsProcessing(true);
+      try {
+         if (isUserSigningUp) {
+            if (!email || !/\S+@\S+\.\S+/.test(email)) {
+               throw new Error("请输入有效的邮箱地址。");
+            }
+            if (!password || password.length < 6) {
+               throw new Error("密码至少需要6个字符。");
+            }
+            if (!firstName || !lastName) {
+               throw new Error("名字和姓氏为必填项。");
+            }
+   
+            await emailSignUp(email, password);
+            setSuccessMessage("注册成功，正在完善资料…");
+            let photoURL = "";
+            if (profilePicFile) {
+               photoURL = await uploadProfilePic(profilePicFile);
+            } else {
+               photoURL = profilePicPreview; 
+            }
+            await completeProfile({ firstName, lastName, photo: photoURL });
+            setSuccessMessage("资料更新成功！");
+            navigate("/dashboard");
          } else {
-            setErrorMessage("邮箱验证失败，请重新注册。");
+            // Sign in mode.
+            if (!email || !/\S+@\S+\.\S+/.test(email)) {
+               throw new Error("请输入有效的邮箱地址。");
+            }
+            if (!password || password.length < 6) {
+               throw new Error("密码至少需要6个字符。");
+            }
+            await emailSignIn(email, password);
+            setSuccessMessage("登录成功！");
+            navigate("/dashboard");
          }
-      }
-   }, []);
-
-   async function handleSendSignUpEmail() {
-      try {
-         setErrorMessage("");
-         setSuccessMessage("");
-         setIsSendingEmail(true);
-
-         if (!email || !/\S+@\S+\.\S+/.test(email)) {
-            throw new Error("请输入有效的邮箱地址。");
-         }
-
-         await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-         window.localStorage.setItem("emailForSignUp", email);
-
-         setSuccessMessage("请检查您的邮箱并点击链接以完成注册。");
-      } catch (error) {
-         setErrorMessage(
-            error instanceof Error ? error.message : "无法发送邮件。"
-         );
-      }
-   }
-
-   async function completeSignUp(storedEmail: string) {
-      try {
-         setErrorMessage("");
-         setSuccessMessage("正在验证您的邮箱...");
-
-         const userCredential = await signInWithEmailLink(
-            auth,
-            storedEmail,
-            window.location.href
-         );
-         await createUserWithEmailAndPassword(auth, storedEmail, password);
-         setSuccessMessage("账户创建成功！");
-
-         window.localStorage.removeItem("emailForSignUp");
-      } catch (error) {
-         setErrorMessage(error instanceof Error ? error.message : "注册失败。");
-      }
-   }
-
-   async function handleSignIn() {
-      try {
-         setErrorMessage("");
-         setSuccessMessage("");
-
-         if (!email || !/\S+@\S+\.\S+/.test(email)) {
-            throw new Error("请输入有效的邮箱地址。");
-         }
-         if (!password || password.length < 6) {
-            throw new Error("密码至少需要6个字符。");
-         }
-
-         await signInWithEmailAndPassword(auth, email, password);
-         setSuccessMessage("用户登录成功！");
       } catch (err) {
          setErrorMessage(
             err instanceof Error ? err.message : "发生了意外错误。"
          );
+      } finally {
+         setIsProcessing(false);
       }
-   }
-
-   async function handleGoogleSignIn() {
-      try {
-         await signInWithPopup(auth, googleAuth);
-      } catch (err) {
-         setErrorMessage("无法使用 Google 登录。");
-      }
-   }
+   };
 
    return (
       <React.Fragment>
@@ -134,10 +105,8 @@ const SignInPage: React.FC<SignInPageProps> = ({
                backgroundColor: "var(--background-color)",
             }}
          >
+
             <Nav
-               user={user}
-               signedIn={signedIn}
-               handleSignOut={handleSignOut}
                isModalOpen={isModalOpen}
                toggleModal={toggleModal}
                home={true}
@@ -147,7 +116,6 @@ const SignInPage: React.FC<SignInPageProps> = ({
                setOverlay={() => {}}
                searchBar={false}
             />
-
             <div className="auth">
                <Typography
                   variant="h1"
@@ -165,72 +133,122 @@ const SignInPage: React.FC<SignInPageProps> = ({
                >
                   {isUserSigningUp ? "创建账户" : "欢迎回来"}
                </Typography>
-
-               <div className="email-signin-input">
-                  <label>邮箱</label>
-                  <input
-                     type="email"
-                     required
-                     value={email}
-                     onChange={(e) => setEmail(e.target.value)}
-                  />
-               </div>
-               <div className="password-signin-input">
-                  <label>密码</label>
-                  <input
-                     type="password"
-                     required
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
-                  />
-               </div>
-
-               {errorMessage && <p className="error-message">{errorMessage}</p>}
-               {successMessage && (
-                  <p className="success-message">{successMessage}</p>
-               )}
-
-               <button
-                  className="signin-btn"
-                  onClick={() => {
-                     isUserSigningUp ? handleSendSignUpEmail() : handleSignIn();
-                  }}
-                  disabled={isSendingEmail}
-                  style={{
-                     backgroundColor: isSendingEmail ? "#ccc" : "",
-                     cursor: isSendingEmail ? "not-allowed" : "pointer",
-                  }}
-               >
-                  {isUserSigningUp
-                     ? isSendingEmail
-                        ? "请确认注册"
-                        : "注册"
-                     : "登录"}
-               </button>
-
+               <form onSubmit={handleSubmit}>
+                  <div className="email-signin-input">
+                     <label>邮箱</label>
+                     <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                     />
+                  </div>
+                  <div className="password-signin-input">
+                     <label>密码</label>
+                     <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                     />
+                  </div>
+                  {isUserSigningUp && (
+                     <>
+                        <div className="email-signin-input">
+                           <label>名字</label>
+                           <input
+                              type="text"
+                              required
+                              value={firstName}
+                              onChange={(e) => setFirstName(e.target.value)}
+                           />
+                        </div>
+                        <div className="email-signin-input">
+                           <label>姓氏</label>
+                           <input
+                              type="text"
+                              required
+                              value={lastName}
+                              onChange={(e) => setLastName(e.target.value)}
+                           />
+                        </div>
+                        <div className="profile-pic-input">
+                           <label>上传头像（可选）</label>
+                           <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                           />
+                           {profilePicPreview && (
+                              <img
+                                 src={profilePicPreview}
+                                 alt="头像预览"
+                                 style={{
+                                    width: "50px",
+                                    height: "50px",
+                                    borderRadius: "50%",
+                                    marginTop: "10px",
+                                    objectFit: "cover",
+                                 }}
+                              />
+                           )}
+                        </div>
+                     </>
+                  )}
+                  {errorMessage && (
+                     <p className="error-message">{errorMessage}</p>
+                  )}
+                  {successMessage && (
+                     <p className="success-message">{successMessage}</p>
+                  )}
+                  <button
+                     className="signin-btn"
+                     type="submit"
+                     disabled={isProcessing}
+                     style={{
+                        backgroundColor: isProcessing ? "#ccc" : "",
+                        cursor: isProcessing ? "not-allowed" : "pointer",
+                     }}
+                  >
+                     {isUserSigningUp ? "注册" : "登录"}
+                  </button>
+               </form>
                <p>
                   {isUserSigningUp ? "已经有账号了？" : "还没有账号？"}
                   <strong>
                      <span
                         onClick={() => {
                            setIsUserSigningUp(!isUserSigningUp);
-                           setIsSendingEmail(false);
+                           setIsProcessing(false);
                         }}
                         style={{
                            cursor: "pointer",
                            textDecoration: "underline",
+                           marginLeft: "8px",
                         }}
                      >
                         {isUserSigningUp ? "登录" : "注册"}
                      </span>
                   </strong>
                </p>
-
-               <button className="google-signin" onClick={handleGoogleSignIn}>
+               <button
+                  className="google-signin"
+                  onClick={async () => {
+                     try {
+                        await googleSignIn();
+                        navigate("/dashboard");
+                     } catch (err) {
+                        setErrorMessage(
+                           err instanceof Error
+                              ? err.message
+                              : "发生了意外错误。"
+                        );
+                     }
+                  }}
+               >
                   使用 Google 继续
                </button>
             </div>
-
             <div style={{ padding: "0 16px" }}>
                <Footer theme={theme} handleToggleTheme={handleToggleTheme} />
             </div>

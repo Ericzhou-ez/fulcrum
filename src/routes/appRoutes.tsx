@@ -1,5 +1,7 @@
-import React from "react";
+// src/routes/AppRoutes.tsx
+import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useMediaQuery } from "@mui/material";
 import SignInPage from "../pages/SignInPage";
 import Dashboard from "../pages/dashboard/dashboard";
 import NotFoundPage from "../pages/NotFoundPage";
@@ -8,47 +10,41 @@ import Components from "../pages/components";
 import RecentProductsPage from "../pages/dashboard/recentPage";
 import PrivateRoute from "./privateRoute";
 import SavedPage from "../pages/dashboard/savedPage";
-import ScrollToTop from "../components/core/scrollToTop";
 import TermsOfServicePage from "../pages/marketing/termsOfServicePage";
 import PrivacyPolicyPage from "../pages/marketing/privacyPage";
-import { useState, useEffect } from "react";
-import { useMediaQuery } from "@mui/material";
-import InternalQuoationPage from "../pages/dashboard/internalQuotation";
+import InternalQuotationPage from "../pages/dashboard/internalQuotation";
 import ExternalQuotationPage from "../pages/dashboard/externalQuotation";
 import SearchPage from "../pages/dashboard/searchPage";
 import SettingPage from "../pages/dashboard/settingsPage";
 import ContactPage from "../pages/marketing/contactPage";
+import { useAuth } from "../contexts/user-context";
 
 export interface AppRoutesProps {
-   signedIn: boolean;
-   user: any;
-   handleSignOut: () => Promise<void>;
-   isModalOpen: boolean;
    theme: any;
-   handleToggleTheme: any
+   handleToggleTheme: any;
    toggleModal: () => void;
+   isModalOpen: boolean;
 }
 
 const AppRoutes: React.FC<AppRoutesProps> = ({
-   signedIn,
-   user,
-   handleSignOut,
-   isModalOpen,
    theme,
    handleToggleTheme,
    toggleModal,
+   isModalOpen,
 }) => {
    const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
-   const [navOpen, setNavOpen] = useState(() => isMdUp);
-   const [overlay, setOverlay] = useState(() => !isMdUp);
+   const [navOpen, setNavOpen] = useState<boolean>(isMdUp);
+   const [overlay, setOverlay] = useState<boolean>(!isMdUp);
    const closeOverlay = () => {
       setOverlay(false);
       setNavOpen(false);
    };
+   const { signedIn, loading } = useAuth();
 
    return (
       <Routes>
-         {/* Route for sign-in */}
+         {/* Sign-in route */}
+
          <Route
             path="/signin"
             element={
@@ -58,26 +54,20 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
                   <SignInPage
                      theme={theme}
                      handleToggleTheme={handleToggleTheme}
-                     user={user}
-                     signedIn={signedIn}
-                     handleSignOut={handleSignOut}
-                     isModalOpen={isModalOpen}
                      toggleModal={toggleModal}
+                     isModalOpen={isModalOpen}
                   />
                )
             }
          />
 
-         {/* Main Dashboard route */}
+         {/* Dashboard route */}
          <Route
             path="/dashboard"
             element={
-               <PrivateRoute signedIn={signedIn}>
+               <PrivateRoute>
                   <Dashboard
-                     signedIn={signedIn}
                      toggleModal={toggleModal}
-                     user={user}
-                     handleSignOut={handleSignOut}
                      isModalOpen={isModalOpen}
                      theme={theme}
                      handleToggleTheme={handleToggleTheme}
@@ -94,12 +84,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
          <Route
             path="/dashboard/settings"
             element={
-               <PrivateRoute signedIn={signedIn}>
+               <PrivateRoute>
                   <SettingPage
-                     signedIn={signedIn}
                      toggleModal={toggleModal}
-                     user={user}
-                     handleSignOut={handleSignOut}
                      isModalOpen={isModalOpen}
                      theme={theme}
                      handleToggleTheme={handleToggleTheme}
@@ -116,12 +103,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
          <Route
             path="/quotation/internal"
             element={
-               <PrivateRoute signedIn={signedIn}>
-                  <InternalQuoationPage
-                     signedIn={signedIn}
+               <PrivateRoute>
+                  <InternalQuotationPage
                      toggleModal={toggleModal}
-                     user={user}
-                     handleSignOut={handleSignOut}
                      isModalOpen={isModalOpen}
                      theme={theme}
                      handleToggleTheme={handleToggleTheme}
@@ -138,12 +122,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
          <Route
             path="/quotation/external"
             element={
-               <PrivateRoute signedIn={signedIn}>
+               <PrivateRoute>
                   <ExternalQuotationPage
-                     signedIn={signedIn}
                      toggleModal={toggleModal}
-                     user={user}
-                     handleSignOut={handleSignOut}
                      isModalOpen={isModalOpen}
                      theme={theme}
                      handleToggleTheme={handleToggleTheme}
@@ -156,15 +137,13 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
                </PrivateRoute>
             }
          />
+
          <Route
             path="/search"
             element={
-               <PrivateRoute signedIn={signedIn}>
+               <PrivateRoute>
                   <SearchPage
-                     signedIn={signedIn}
                      toggleModal={toggleModal}
-                     user={user}
-                     handleSignOut={handleSignOut}
                      isModalOpen={isModalOpen}
                      theme={theme}
                      handleToggleTheme={handleToggleTheme}
@@ -178,79 +157,56 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
             }
          />
 
-         {/* Component dev route */}
+         {/* Developer components */}
          <Route path="/components" element={<Components />} />
 
-         {/* marketing page */}
+         {/* Marketing / Public routes */}
          <Route
             path="/"
             element={
-               <Home
-                  theme={theme}
-                  handleToggleTheme={handleToggleTheme}
-                  signedIn={signedIn}
-                  user={user}
-               />
+               <Home theme={theme} handleToggleTheme={handleToggleTheme} />
             }
          />
-
-         {/* tos page */}
          <Route
             path="/terms"
             element={
                <TermsOfServicePage
-                  signedIn={signedIn}
                   toggleModal={toggleModal}
-                  user={user}
-                  handleSignOut={handleSignOut}
-                  isModalOpen={isModalOpen}
                   theme={theme}
                   handleToggleTheme={handleToggleTheme}
+                  isModalOpen={false}
                />
             }
          />
-
          <Route
             path="/contact"
             element={
                <ContactPage
-                  signedIn={signedIn}
                   toggleModal={toggleModal}
-                  user={user}
-                  handleSignOut={handleSignOut}
-                  isModalOpen={isModalOpen}
                   theme={theme}
                   handleToggleTheme={handleToggleTheme}
+                  isModalOpen={false}
                />
             }
          />
-
-         {/* pp page */}
          <Route
             path="/privacy"
             element={
                <PrivacyPolicyPage
-                  signedIn={signedIn}
                   toggleModal={toggleModal}
-                  user={user}
-                  handleSignOut={handleSignOut}
-                  isModalOpen={isModalOpen}
                   theme={theme}
                   handleToggleTheme={handleToggleTheme}
+                  isModalOpen={false}
                />
             }
          />
 
-         {/* recently added products page */}
          <Route
             path="/recent"
             element={
-               <PrivateRoute signedIn={signedIn}>
+               <PrivateRoute>
                   <RecentProductsPage
-                     signedIn={signedIn}
                      toggleModal={toggleModal}
-                     user={user}
-                     handleSignOut={handleSignOut}
                      isModalOpen={isModalOpen}
                      theme={theme}
                      handleToggleTheme={handleToggleTheme}
@@ -264,16 +220,12 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
             }
          />
 
-         {/* saved page */}
          <Route
             path="/saved"
             element={
-               <PrivateRoute signedIn={signedIn}>
+               <PrivateRoute>
                   <SavedPage
-                     signedIn={signedIn}
                      toggleModal={toggleModal}
-                     user={user}
-                     handleSignOut={handleSignOut}
                      isModalOpen={isModalOpen}
                      theme={theme}
                      handleToggleTheme={handleToggleTheme}
@@ -287,7 +239,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
             }
          />
 
-         {/* Catch-all redirect */}
+         {/* Fallback */}
          <Route path="*" element={<NotFoundPage />} />
       </Routes>
    );

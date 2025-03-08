@@ -98,7 +98,7 @@ const [user, setUser] = useState<any>(null);
                      maxWidth: "130px",
                   }}
                >
-                  {user?.displayName || "未登录用户"}
+                  {user?.displayName || "用户"}
                </Typography>
                {user?.email && (
                   <Typography

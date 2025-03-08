@@ -1,34 +1,13 @@
-import React, { useMemo, useState, useEffect, SetStateAction } from "react";
-import {
-   createTheme,
-   ThemeProvider,
-   CssBaseline,
-   Container,
-   Typography,
-} from "@mui/material";
-import Nav from "./components/core/nav";
-import { signOut, onAuthStateChanged } from "firebase/auth";
-import Footer from "./components/core/footer";
-import { auth } from "./configs/firebase";
-import Dashboard from "./pages/dashboard/dashboard";
-import AppRoutes from "./routes/appRoutes";
-import { BrowserRouter } from "react-router";
-import Loading from "./components/core/loading";
+import React, { useMemo, useState, useEffect } from "react";
+import { createTheme, ThemeProvider, CssBaseline } from "@mui/material";
+import { BrowserRouter, useActionData } from "react-router-dom";
 import ScrollToTop from "./components/core/scrollToTop";
+import AppRoutes from "./routes/appRoutes";
 import { Analytics } from "@vercel/analytics/react";
+import { AuthProvider, useAuth } from "./contexts/user-context";
+import Loading from "./components/core/loading";
 
-type User = {
-   name: string;
-   photo: string;
-};
-
-declare module "@mui/material/styles" {
-   interface TypeBackground {
-      secondary: string;
-   }
-}
-
-function App() {
+function AppContent() {
    const [mode, setMode] = useState<"light" | "dark">(() => {
       const savedTheme = localStorage.getItem("theme");
       if (savedTheme === "light" || savedTheme === "dark") {
@@ -41,13 +20,11 @@ function App() {
 
    useEffect(() => {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
       const handleThemeChange = (e: MediaQueryListEvent) => {
          const newMode = e.matches ? "dark" : "light";
          setMode(newMode);
-         localStorage.setItem("theme", newMode); // Save updated theme to localStorage
+         localStorage.setItem("theme", newMode);
       };
-
       mediaQuery.addEventListener("change", handleThemeChange);
       return () => mediaQuery.removeEventListener("change", handleThemeChange);
    }, []);
@@ -55,49 +32,17 @@ function App() {
    useEffect(() => {
       localStorage.setItem("theme", mode);
    }, [mode]);
-   // Default to device theme
-
-   const [user, setUser] = useState<User | null>(null);
-   const [signedIn, setSignedIn] = useState(false);
-   const [loading, setLoading] = useState(true);
-   const [isModalOpen, setIsModalOpen] = useState(false);
-
-   const toggleModal = () => {
-      setIsModalOpen(!isModalOpen);
-   };
-
-   useEffect(() => {
-      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-         if (currentUser) {
-            const { displayName, photoURL } = currentUser;
-            setUser({
-               name: displayName || "User",
-               photo: photoURL || "",
-            });
-            setSignedIn(true);
-         } else {
-            setUser(null);
-            setSignedIn(false);
-         }
-         setLoading(false);
-      });
-      return () => unsubscribe();
-   }, []);
 
    const theme = useMemo(
       () =>
          createTheme({
             palette: {
                mode,
-               primary: {
-                  main: "#f27e35",
-               },
-               secondary: {
-                  main: "#f5bf46",
-               },
+               primary: { main: "#f27e35" },
+               secondary: { main: "#f5bf46" },
                background: {
                   default: mode === "light" ? "#ffffff" : "#121212",
-                  secondary: mode === "light" ? "#f7f7f7" : "#1e1e1e",
+                  paper: mode === "light" ? "#fefefe" : "#1e1e1e",
                },
                text: {
                   primary: mode === "light" ? "#000000" : "#ffffff",
@@ -112,7 +57,6 @@ function App() {
    );
 
    useEffect(() => {
-      // Sync all theme colors to CSS variables
       const { primary, secondary, background, text } = theme.palette;
       document.documentElement.style.setProperty(
          "--primary-color",
@@ -128,7 +72,7 @@ function App() {
       );
       document.documentElement.style.setProperty(
          "--background-secondary-color",
-         background.secondary
+         background.paper
       );
       document.documentElement.style.setProperty(
          "--text-primary-color",
@@ -140,11 +84,9 @@ function App() {
       );
    }, [theme]);
 
-   const handleToggleTheme = (newTheme: any) => {
-      setMode(newTheme);
-   };
-
-   const handleSignOut = async () => await signOut(auth);
+   const [isModalOpen, setIsModalOpen] = useState(false);
+   const toggleModal = () => setIsModalOpen((prev) => !prev);
+   const { loading } = useAuth();
 
    return (
       <ThemeProvider theme={theme}>
@@ -152,21 +94,25 @@ function App() {
          <CssBaseline />
          <BrowserRouter>
             <ScrollToTop />
-            {loading ? (
-               <Loading />
-            ) : (
-               <AppRoutes
-                  signedIn={signedIn}
-                  toggleModal={toggleModal}
-                  user={user}
-                  handleSignOut={handleSignOut}
-                  isModalOpen={isModalOpen}
-                  theme={theme}
-                  handleToggleTheme={handleToggleTheme}
-               />
-            )}
+            {loading && <Loading />}
+            <AppRoutes
+               theme={theme}
+               handleToggleTheme={(newTheme: "light" | "dark") =>
+                  setMode(newTheme)
+               }
+               toggleModal={toggleModal}
+               isModalOpen={isModalOpen}
+            />
          </BrowserRouter>
       </ThemeProvider>
+   );
+}
+
+function App() {
+   return (
+      <AuthProvider>
+         <AppContent />
+      </AuthProvider>
    );
 }
 

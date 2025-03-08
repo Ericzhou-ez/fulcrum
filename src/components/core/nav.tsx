@@ -12,14 +12,9 @@ import {
 } from "@mui/material";
 import { MagnifyingGlass, List } from "phosphor-react";
 import { ProfileModal } from "./floatingSettings";
+import { useAuth, userType } from "../../contexts/user-context";
 
 interface NavProps {
-   signedIn: boolean;
-   user: {
-      name?: string;
-      photo?: string;
-   };
-   handleSignOut: () => void;
    isModalOpen: boolean;
    toggleModal: () => void;
    home: boolean;
@@ -30,10 +25,13 @@ interface NavProps {
    searchBar: boolean;
 }
 
+interface AuthType {
+   signedIn: boolean;
+   user: userType;
+   handleSignOut: () => Promise<void>;
+}
+
 const Nav: React.FC<NavProps> = ({
-   signedIn,
-   user,
-   handleSignOut,
    isModalOpen,
    toggleModal,
    home,
@@ -48,6 +46,7 @@ const Nav: React.FC<NavProps> = ({
    const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+   const { signedIn, user, handleSignOut } = useAuth() as AuthType;
 
    useEffect(() => {
       if (!isMdUp) {
